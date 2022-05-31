@@ -1,48 +1,29 @@
-// struct Triangle : Intersectable {
-//     glm::vec3 v0;
-//     glm::vec3 v1;
-//     glm::vec3 v2;
+#pragma once
 
-//     glm::vec3 color;
+#include <vector>
 
-//     glm::vec3 getColor() const override { return color; }
+#include "Intersectable.h"
 
-//     bool intersect(const Ray &ray, float &t0) const override {
-//         return intersectTriangle(v0, v1, v2, ray, t0);
-//     }
+namespace geom {
 
-//     static bool intersectTriangle(
-//         const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2, const Ray &ray,
-//         float &t0
-//     ) {
-//         auto origin    = ray.getOrigin();
-//         auto direction = ray.getDirection();
+struct Triangle : Intersectable {
+    std::vector<glm::vec3> vertices;
 
-//         auto v0v1 = v1 - v0;
-//         auto v0v2 = v2 - v0;
+    glm::vec3 color;
 
-//         auto pvec = glm::cross(direction, v0v2);
-//         float det = glm::dot(v0v1, pvec);
+    const glm::vec3 &getColor() const override;
+    std::optional<HitRecord> intersect(const kc::math::Ray &ray) const;
 
-//         constexpr float epsilon = 0.0001f;
+    glm::vec3 getNormal(const glm::vec3 &hitPoint) const;
 
-//         if (std::fabs(det) < epsilon)  // ray is parallel
-//             return false;
+    static std::optional<HitRecord> intersectTriangle(
+        const std::vector<glm::vec3> &vertices, const kc::math::Ray &ray
+    );
 
-//         float invDet = 1.0f / det;
+    static std::optional<HitRecord> intersectTriangle(
+        const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2,
+        const kc::math::Ray &ray
+    );
+};
 
-//         auto tvec = origin - v0;
-
-//         float u = glm::dot(tvec, pvec) * invDet;
-//         if (u < 0 || u > 1) return false;
-
-//         auto qvec = glm::cross(tvec, v0v1);
-//         float v   = glm::dot(direction, qvec) * invDet;
-
-//         if (v < 0 || u + v > 1) return false;
-
-//         t0 = glm::dot(v0v2, qvec) * invDet;
-
-//         return true;
-//     }
-// };
+}  // namespace geom

@@ -6,6 +6,9 @@
 
 #include "geom/Intersectable.h"
 #include "geom/Sphere.h"
+#include "geom/Triangle.h"
+#include "geom/TriangleMesh.h"
+
 #include "Renderer.h"
 
 int main() {
@@ -36,9 +39,33 @@ int main() {
     };
     geom::Sphere s3{s3Description};
 
+    geom::Triangle t1;
+
+    t1.vertices = {
+        glm::vec3{2.5f, -1.0f, -3.0f},
+        glm::vec3{3.5f, -1.0f, -3.0f},
+        glm::vec3{3.5f, 1.0f,  -3.0f}
+    };
+
+    t1.color = glm::vec3{1.0f, 1.0f, 0.0f};
+
+    geom::TriangleMesh m1;
+
+    m1.vertices = {
+        glm::vec3{-3.0f, -2.0f, -7.0f},
+        glm::vec3{3.0f,  -2.0f, -7.0f},
+        glm::vec3{3.0f,  4.0f,  -7.0f},
+        glm::vec3{-3.0f, 4.0f,  -7.0f}
+    };
+
+    m1.indices = {0, 1, 3, 1, 2, 3};
+    m1.color   = glm::vec3{0.0f, 1.0f, 0.0f};
+
     objects.push_back(&s1);
     objects.push_back(&s2);
     objects.push_back(&s3);
+    objects.push_back(&t1);
+    objects.push_back(&m1);
 
     renderer.render(objects);
 
@@ -51,15 +78,6 @@ int main() {
     kc::core::FileSystem{}.writeFile(
         "image.ppm", str.str(), kc::core::FileSystem::WritePolicy::override
     );
-
-    // m1.vertices = {
-    //     glm::vec3{-1.0f, -1.0f, -9.0f},
-    //     glm::vec3{1.0f,  -1.0f, -9.0f},
-    //     glm::vec3{1.0f,  1.0f,  -9.0f},
-    //     glm::vec3{-1.0f, 1.0f,  -9.0f}
-    // };
-    // m1.indices = {0, 1, 3, 1, 2, 3};
-    // m1.color   = glm::vec3{1.0f, 1.0f, 0.0f};
 
     return 0;
 }

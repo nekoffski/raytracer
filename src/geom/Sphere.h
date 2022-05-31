@@ -17,6 +17,7 @@ class Sphere : public Intersectable {
     explicit Sphere(const Params& params);
     const glm::vec3& getColor() const override;
 
+    glm::vec2 getUV(const glm::vec3& hitPoint) const override;
     glm::vec3 getNormal(const glm::vec3& hitPoint) const override;
 
     std::optional<Intersectable::HitRecord> intersect(const kc::math::Ray& ray

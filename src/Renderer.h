@@ -23,14 +23,17 @@ class Renderer {
     void render(const std::vector<geom::Intersectable *> scene);
 
    private:
-    geom::Intersectable *trace(
-        const kc::math::Ray &ray, const std::vector<geom::Intersectable *> &objects,
-        float &t
+    struct TraceRecord {
+        geom::Intersectable *object;
+        float hitDistance;
+    };
+
+    TraceRecord trace(
+        const kc::math::Ray &ray, const std::vector<geom::Intersectable *> &objects
     );
 
     glm::vec3 castRay(
-        const kc::math::Ray &ray, const std::vector<geom::Intersectable *> &objects,
-        int maxRecursion = 15
+        const kc::math::Ray &ray, const std::vector<geom::Intersectable *> &objects
     );
 
     Config m_config;

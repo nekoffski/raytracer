@@ -37,4 +37,9 @@ std::optional<Intersectable::HitRecord> Sphere::intersect(const kc::math::Ray& r
     return Intersectable::HitRecord{t0};
 }
 
+glm::vec2 Sphere::getUV(const glm::vec3& hitPoint) const {
+    return glm::vec2{
+        std::atan(hitPoint.y / hitPoint.x), std::acos(hitPoint.z / m_params.r)};
+}
+
 }  // namespace geom

@@ -23,11 +23,10 @@ void Renderer::render(const std::vector<geom::Intersectable *> scene) {
     }
 }
 
-geom::Intersectable *Renderer::trace(
-    const kc::math::Ray &ray, const std::vector<geom::Intersectable *> &objects, float &t
+Renderer::TraceRecord Renderer::trace(
+    const kc::math::Ray &ray, const std::vector<geom::Intersectable *> &objects
 ) {
-    float nearestHit = 100000000000.0f;
-
+    float nearestHit               = std::numeric_limits<float>::max();
     geom::Intersectable *hitObject = nullptr;
 
     for (auto &object : objects) {
@@ -39,35 +38,28 @@ geom::Intersectable *Renderer::trace(
             }
         }
     }
-    t = nearestHit;
-    return hitObject;
+
+    return TraceRecord{hitObject, nearestHit};
 }
 
 glm::vec3 Renderer::castRay(
-    const kc::math::Ray &ray, const std::vector<geom::Intersectable *> &objects,
-    int maxRecursion
+    const kc::math::Ray &ray, const std::vector<geom::Intersectable *> &objects
 ) {
-    glm::vec3 background{0.7f, 0.75f, 1.0f};
+    const static glm::vec3 background{0.7f, 0.75f, 1.0f};
 
-    if (maxRecursion < 0) return glm::vec3{0.0f};
+    const auto [hitObject, hitDistance] = trace(ray, objects);
 
-    float hitT;
-    auto hitObject = trace(ray, objects, hitT);
+    if (not hitObject) return background * 0.3f;
 
-    if (hitObject) {
-        auto hitPoint = ray.at(hitT);
-        auto n        = hitObject->getNormal(hitPoint);
-        auto d        = ray.getDirection();
+    auto hitPoint = ray.at(hitDistance);
+    auto n        = hitObject->getNormal(hitPoint);
+    auto d        = ray.getDirection();
 
-        auto r = glm::normalize(d - 2 * (glm::dot(d, n)) * n);
-        kc::math::Ray newRay{hitPoint, r};
+    const float facingRatio = std::max(0.0f, glm::dot(-d, n));
 
-        const float facingRatio = std::max(0.0f, glm::dot(-d, n));
+    // light
+    auto l              = glm::normalize(glm::vec3{-1.0, 0.3f, 1.0f});
+    auto lightIntensity = 0.5f;
 
-        const float v = 0.3;
-        return facingRatio * (1 - v) * hitObject->getColor() +
-               v * castRay(newRay, objects, maxRecursion - 1);
-    }
-
-    return background;
+    return hitObject->getColor() * lightIntensity * std::max(0.0f, glm::dot(n, l));
 }
