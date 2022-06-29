@@ -1,30 +1,51 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <kc/math/Utils.hpp>
 
-#include "Intersectable.h"
+#include "Hittable.h"
 
 namespace geom {
 
-class Sphere : public Intersectable {
+class Sphere : public Hittable {
    public:
-    struct Params {
-        glm::vec3 center;
-        glm::vec3 color;
-        float r;
-    };
+    explicit Sphere(const glm::vec3& position, float radius)
+        : m_position(position), m_radius(radius) {}
 
-    explicit Sphere(const Params& params);
-    const glm::vec3& getColor() const override;
+    std::optional<HitRecord> hit(const kc::math::Ray& ray, float min, float max)
+        override {
+        auto L  = ray.getOrigin() - m_position;
+        float a = glm::dot(ray.getDirection(), ray.getDirection());
 
-    glm::vec2 getUV(const glm::vec3& hitPoint) const override;
-    glm::vec3 getNormal(const glm::vec3& hitPoint) const override;
+        float b = 2 * glm::dot(ray.getDirection(), L);
+        float c = glm::dot(L, L) - m_radius * m_radius;
 
-    std::optional<Intersectable::HitRecord> intersect(const kc::math::Ray& ray
-    ) const override;
+        auto roots = kc::math::solveQuadraticEquation(a, b, c);
+
+        if (not roots) return {};
+
+        auto [t0, t1] = *roots;
+
+        if (t0 > t1) std::swap(t0, t1);
+
+        if (t0 < 0) {
+            t0 = t1;                // if t0 is negative, let's use t1 instead
+            if (t0 < 0) return {};  // both t0 and t1 are negative
+        }
+
+        if (t0 < min || max < t0) return {};
+
+        auto hitPoint = ray.at(t0);
+
+        return HitRecord{
+            .hitPoint = hitPoint,
+            .normal   = glm::normalize(hitPoint - m_position),
+            .t        = t0};
+    }
 
    private:
-    Params m_params;
+    glm::vec3 m_position;
+    float m_radius;
 };
 
 }  // namespace geom
