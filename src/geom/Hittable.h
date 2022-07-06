@@ -6,12 +6,16 @@
 #include <glm/glm.hpp>
 #include <kc/math/Ray.h>
 
+#include "mat/Material.h"
+
 namespace geom {
 
 struct HitRecord {
     glm::vec3 hitPoint;
     glm::vec3 normal;
     float t;
+
+    mat::Material* material;
 };
 
 struct Hittable {
@@ -23,6 +27,8 @@ struct Hittable {
 class HittableCollection : public Hittable {
    public:
     void clear() { m_objects.clear(); }
+
+    template <typename... Args> void addObjects(Args&&... args) { (add(args), ...); }
 
     void add(Hittable* object) { m_objects.push_back(object); }
 

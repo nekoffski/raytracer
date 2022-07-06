@@ -9,8 +9,8 @@ namespace geom {
 
 class Sphere : public Hittable {
    public:
-    explicit Sphere(const glm::vec3& position, float radius)
-        : m_position(position), m_radius(radius) {}
+    explicit Sphere(const glm::vec3& position, float radius, mat::Material* material)
+        : m_position(position), m_radius(radius), m_material(material) {}
 
     std::optional<HitRecord> hit(const kc::math::Ray& ray, float min, float max)
         override {
@@ -40,12 +40,14 @@ class Sphere : public Hittable {
         return HitRecord{
             .hitPoint = hitPoint,
             .normal   = glm::normalize(hitPoint - m_position),
-            .t        = t0};
+            .t        = t0,
+            .material = m_material};
     }
 
    private:
     glm::vec3 m_position;
     float m_radius;
+    mat::Material* m_material;
 };
 
 }  // namespace geom

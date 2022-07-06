@@ -7,6 +7,10 @@
 #include "geom/Sphere.h"
 #include "geom/Hittable.h"
 
+#include "mat/Metal.h"
+#include "mat/Dielectric.h"
+#include "mat/Lambertian.h"
+
 #include <iostream>
 
 struct Config {
@@ -60,7 +64,7 @@ class Renderer {
 
     const Framebuffer& getFramebuffer() const { return m_framebuffer; }
 
-    void render(int depth = 10) {
+    void render(int depth = 5) {
         const float aspect = (float)m_config.width / m_config.height;
 
         auto viewport_height = 2.0;
@@ -73,7 +77,7 @@ class Renderer {
         auto lower_left_corner =
             origin - horizontal / 2.0f - vertical / 2.0f - glm::vec3(0, 0, focal_length);
 
-        static constexpr int samplesPerPixel = 15;
+        static constexpr int samplesPerPixel = 8;
 
         for (int j = m_config.height - 1; j >= 0; --j) {
             std::cout << (int
@@ -117,14 +121,13 @@ class Renderer {
     glm::vec3 traceRay(const kc::math::Ray& ray, int depth) {
         if (depth <= 0) return glm::vec3{0.0f};
 
-        auto result = m_world->hit(ray, 0.001f, std::numeric_limits<float>::max());
+        static constexpr float max = std::numeric_limits<float>::max();
 
-        if (result) {
-            auto target = result->hitPoint + result->normal +
-                          kc::math::randomUnitHemisphereVec3(result->normal);
-            kc::math::Ray newRay{result->hitPoint, target - result->hitPoint};
+        if (auto result = m_world->hit(ray, 0.001f, max); result) {
+            if (auto s = result->material->scatter(ray, *result); s)
+                return s->attenuation * traceRay(s->ray, depth - 1);
 
-            return 0.5f * traceRay(newRay, depth - 1);
+            return glm::vec3{0.0f};
         }
 
         return background(ray);
@@ -153,17 +156,34 @@ int main() {
 
     geom::HittableCollection world;
 
+    using namespace mat;
+
+    Lambertian l1(glm::vec3(0.8, 0.8, 0.0));
+    Lambertian l2(glm::vec3(0.7, 0.3, 0.3));
+
+    Metal m1(glm::vec3(0.8, 0.8, 0.8), 0.3f);
+    Metal m2(glm::vec3(0.8, 0.6, 0.2), 0.9f);
+
+    Dielectric d1{1.5f};
+
     geom::Sphere s1{
-        glm::vec3{0, 0, -1},
-        0.5f
+        glm::vec3{0.0, -100.5, -1.0},
+        100.0f, &l1
     };
     geom::Sphere s2{
-        glm::vec3{0, -100.5, -1},
-        100.0f
+        glm::vec3{0.0, 0.0, -1.0},
+        0.5f, &l2
+    };
+    geom::Sphere s3{
+        glm::vec3{-1.0, 0.0, -1.0},
+        0.5f, &d1
+    };
+    geom::Sphere s4{
+        glm::vec3{1.0, 0.0, -1.0},
+        0.5f, &m2
     };
 
-    world.add(&s1);
-    world.add(&s2);
+    world.addObjects(&s1, &s2, &s3, &s4);
 
     Renderer renderer{config, &world};
     renderer.render();
