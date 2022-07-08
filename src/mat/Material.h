@@ -5,9 +5,7 @@
 #include <kc/math/Ray.h>
 #include <glm/glm.hpp>
 
-namespace geom {
-struct HitRecord;
-}
+#include "geom/fwd.h"
 
 namespace mat {
 
@@ -18,7 +16,7 @@ struct ScatterRecord {
 
 struct Material {
     virtual std::optional<ScatterRecord> scatter(
-        const kc::math::Ray& ray, const geom::HitRecord& hitRecord
+        const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord
     ) = 0;
 };
 
