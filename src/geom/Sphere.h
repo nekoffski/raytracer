@@ -15,6 +15,8 @@ class Sphere : public Intersectable {
         const kc::math::Ray& ray, float min, float max
     ) override;
 
+    bvh::AABB getBoundingBox() const override;
+
    private:
     glm::vec3 m_position;
     float m_radius;

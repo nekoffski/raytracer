@@ -20,6 +20,8 @@ class IntersectableCollection : public Intersectable {
         const kc::math::Ray& ray, float min, float max
     ) override;
 
+    bvh::AABB getBoundingBox() const override;
+
    private:
     std::vector<Intersectable*> m_objects;
 };

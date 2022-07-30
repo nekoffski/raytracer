@@ -1,5 +1,7 @@
 #include "IntersectableCollection.h"
 
+#include <kc/core/Log.h>
+
 namespace geom {
 
 void IntersectableCollection::clear() { m_objects.clear(); }
@@ -19,6 +21,19 @@ std::optional<IntersectRecord> IntersectableCollection::intersect(
         }
     }
     return IntersectRecord;
+}
+
+bvh::AABB IntersectableCollection::getBoundingBox() const {
+    ASSERT(
+        m_objects.size() > 0, "Empty IntersectableCollection cannot produce Bounding Box"
+    );
+
+    auto boundingBox = m_objects.front()->getBoundingBox();
+
+    for (int i = 1; i < m_objects.size(); ++i)
+        boundingBox.mergeInPlaceWith(m_objects[i]->getBoundingBox());
+
+    return boundingBox;
 }
 
 }  // namespace geom

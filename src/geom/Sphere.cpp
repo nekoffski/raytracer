@@ -5,6 +5,11 @@ namespace geom {
 Sphere::Sphere(const glm::vec3& position, float radius, mat::Material* material)
     : m_position(position), m_radius(radius), m_material(material) {}
 
+bvh::AABB Sphere::getBoundingBox() const {
+    auto diagonal = glm::vec3{m_radius};
+    return bvh::AABB{m_position - diagonal, m_position + diagonal};
+}
+
 std::optional<IntersectRecord> Sphere::intersect(
     const kc::math::Ray& ray, float min, float max
 ) {

@@ -18,63 +18,62 @@ Renderer::Renderer(const Config& config, const Camera& camera, geom::Intersectab
 
 const Renderer::Framebuffer& Renderer::getFramebuffer() const { return m_framebuffer; }
 
+glm::vec3 applyGammaCorrection(glm::vec3 color) {
+    static const float factor     = 1.0f / 2.2f;
+    static constexpr int channels = 3;
+
+    for (int i = 0; i < channels; ++i) color[i] = std::pow(color[i], factor);
+
+    return color;
+}
+
+int Renderer::getProgress(int index) {
+    return static_cast<int>(
+        100.0f * static_cast<float>(m_config.height - index) /
+        static_cast<float>(m_config.height)
+    );
+}
+
+std::pair<float, float> Renderer::getUV(int i, int j) const {
+    auto u = static_cast<float>(i + kc::math::random<float>(-0.5f, 0.5f)) /
+             (m_config.width - 1);
+    auto v = static_cast<float>(j + kc::math::random<float>(-0.5f, 0.5f)) /
+             (m_config.height - 1);
+
+    return {u, v};
+}
+
 void Renderer::render(int depth) {
-    const float aspect = (float)m_config.width / m_config.height;
-
-    auto viewport_height = 2.0;
-    auto viewport_width  = aspect * viewport_height;
-    auto focal_length    = 1.0;
-
-    auto origin     = glm::vec3(0, 0, 0);
-    auto horizontal = glm::vec3(viewport_width, 0, 0);
-    auto vertical   = glm::vec3(0, viewport_height, 0);
-    auto lower_left_corner =
-        origin - horizontal / 2.0f - vertical / 2.0f - glm::vec3(0, 0, focal_length);
-
-    static constexpr int samplesPerPixel = 8;
+    static constexpr int samplesPerPixel = 10;
 
     for (int j = m_config.height - 1; j >= 0; --j) {
-        std::cout << (int
-                     )((float)((m_config.height - j) / (float)m_config.height) * 100.0f)
-                  << "% done\n";
+        std::cout << getProgress(j) << "% done\n";
 
         for (int i = 0u; i < m_config.width; ++i) {
             glm::vec3 color{0.0f};
 
             for (int k = 0; k < samplesPerPixel; ++k) {
-                auto u = static_cast<float>(i + kc::math::random<float>(-0.5f, 0.5f)) /
-                         (m_config.width - 1);
-                auto v = static_cast<float>(j + kc::math::random<float>(-0.5f, 0.5f)) /
-                         (m_config.height - 1);
+                auto [u, v] = getUV(i, j);
 
-                auto targetPoint = lower_left_corner + u * horizontal + v * vertical;
-                auto ray         = m_camera.getRay(u, v);
-
-                color += traceRay(ray, depth);
+                color += traceRay(m_camera.getRay(u, v), depth);
             }
 
             color /= static_cast<float>(samplesPerPixel);
-
-            static auto applyGammaCorrection = [](float value) {
-                const float factor = 1.0f / 2.2f;
-                return std::pow(value, factor);
-            };
-
-            color.x = applyGammaCorrection(color.x);
-            color.y = applyGammaCorrection(color.y);
-            color.z = applyGammaCorrection(color.z);
-
-            m_framebuffer[(m_config.height - j - 1) * m_config.width + i] = color;
+            m_framebuffer[(m_config.height - j - 1) * m_config.width + i] =
+                applyGammaCorrection(color);
         }
     }
 }
 
 glm::vec3 Renderer::traceRay(const kc::math::Ray& ray, int depth) {
-    if (depth <= 0) return glm::vec3{0.0f};
+    static const glm::vec3 black{0.0f};
+    static constexpr float nearest = 0.001f;
+
+    if (depth <= 0) return black;
 
     static constexpr float max = std::numeric_limits<float>::max();
 
-    if (auto result = m_world->intersect(ray, 0.001f, max); result) {
+    if (auto result = m_world->intersect(ray, nearest, max); result) {
         if (auto s = result->material->scatter(ray, *result); s)
             return s->attenuation * traceRay(s->ray, depth - 1);
 

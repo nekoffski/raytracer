@@ -19,10 +19,13 @@ class Renderer {
 
     const Framebuffer& getFramebuffer() const;
 
-    void render(int depth = 5);
+    void render(int depth = 15);
     glm::vec3 traceRay(const kc::math::Ray& ray, int depth);
 
    private:
+    std::pair<float, float> getUV(int i, int j) const;
+    int getProgress(int index);
+
     const Config& m_config;
     const Camera& m_camera;
     Framebuffer m_framebuffer;
