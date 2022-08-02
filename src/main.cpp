@@ -71,7 +71,9 @@ int main() {
         5.0f
     };
 
-    Renderer renderer{config, camera, &world};
+    auto boundingVolume = world.getBoundingVolume();
+
+    Renderer renderer{config, camera, &boundingVolume};
     renderer.render();
 
     saveImage(renderer.getFramebuffer(), config);

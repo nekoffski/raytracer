@@ -5,6 +5,7 @@
 
 #include "Intersectable.h"
 #include "IntersectRecord.h"
+#include "bvh/Node.h"
 
 namespace geom {
 
@@ -15,6 +16,10 @@ class IntersectableCollection : public Intersectable {
     void clear();
 
     void add(Intersectable* object);
+
+    bvh::Node getBoundingVolume() const {
+        return bvh::Node{m_objects, 0, m_objects.size()};
+    }
 
     std::optional<IntersectRecord> intersect(
         const kc::math::Ray& ray, float min, float max
