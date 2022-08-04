@@ -4,7 +4,7 @@
 
 namespace mat {
 
-Lambertian::Lambertian(const glm::vec3& albedo) : m_albedo(albedo) {}
+Lambertian::Lambertian(texture::Texture* albedo) : m_albedo(albedo) {}
 
 std::optional<ScatterRecord> Lambertian::scatter(
     const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord
@@ -17,7 +17,14 @@ std::optional<ScatterRecord> Lambertian::scatter(
     if (glm::length(rayDirection) < delta) rayDirection = hitRecord.normal;
 
     kc::math::Ray scatteredRay{hitRecord.hitPoint, rayDirection};
-    return ScatterRecord{.ray = scatteredRay, .attenuation = m_albedo};
+
+    const auto attenuation =
+        m_albedo->getColor(hitRecord.u, hitRecord.v, hitRecord.hitPoint);
+
+    return ScatterRecord{
+        .ray         = scatteredRay,
+        .attenuation = attenuation,
+    };
 }
 
 }  // namespace mat

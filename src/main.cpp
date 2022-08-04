@@ -12,6 +12,9 @@
 #include "mat/Dielectric.h"
 #include "mat/Lambertian.h"
 
+#include "texture/Solid.h"
+#include "texture/Checker.h"
+
 #include "Config.h"
 #include "Renderer.h"
 
@@ -33,9 +36,18 @@ int main() {
     geom::IntersectableCollection world;
 
     using namespace mat;
+    using namespace texture;
 
-    Lambertian l1(glm::vec3(0.8, 0.8, 0.0));
-    Lambertian l2(glm::vec3(0.7, 0.3, 0.3));
+    Solid t1{glm::vec3(0.8, 0.8, 0.0)};
+    Solid t2{glm::vec3(0.7, 0.3, 0.3)};
+
+    Solid t3{glm::vec3{1.0f}};
+    Solid t4{glm::vec3{0.0f}};
+
+    Checker c1{&t3, &t4};
+
+    Lambertian l1(&c1);
+    Lambertian l2(&t2);
 
     Metal m1(glm::vec3(0.8, 0.8, 0.8), 0.3f);
     Metal m2(glm::vec3(0.8, 0.6, 0.2), 0.9f);
@@ -62,9 +74,9 @@ int main() {
     world.addObjects(&s1, &s2, &s3, &s4);
 
     Camera camera{
-        glm::vec3{-2, 2, 1 },
-        glm::vec3{0,  0, -1},
-        glm::vec3{0,  1, 0 },
+        glm::vec3{-1, 1, 0.5},
+        glm::vec3{0,  0, -1 },
+        glm::vec3{0,  1, 0  },
         90.0f,
         1600.0f / 900.0f,
         2.0f,

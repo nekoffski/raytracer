@@ -10,6 +10,13 @@ bvh::AABB Sphere::getBoundingBox() const {
     return bvh::AABB{m_position - diagonal, m_position + diagonal};
 }
 
+std::pair<float, float> getUV(const glm::vec3& point) {
+    auto theta = std::acos(-point.y);
+    auto phi   = std::atan2(-point.z, point.x) + M_PI;
+
+    return {phi / (2.0f * M_PI), theta / M_PI};
+}
+
 std::optional<IntersectRecord> Sphere::intersect(
     const kc::math::Ray& ray, float min, float max
 ) {
@@ -34,13 +41,18 @@ std::optional<IntersectRecord> Sphere::intersect(
 
     if (t0 < min || max < t0) return {};
 
-    auto hitPoint = ray.at(t0);
+    const auto hitPoint = ray.at(t0);
+    const auto normal   = glm::normalize(hitPoint - m_position);
+    const auto [u, v]   = getUV(normal);
 
     return IntersectRecord{
         .hitPoint = hitPoint,
-        .normal   = glm::normalize(hitPoint - m_position),
+        .normal   = normal,
         .t        = t0,
-        .material = m_material};
+        .u        = u,
+        .v        = v,
+        .material = m_material,
+    };
 }
 
 }  // namespace geom
