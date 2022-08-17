@@ -1,4 +1,5 @@
 #include <kc/core/FileSystem.h>
+#include <kc/core/Log.h>
 #include <kc/math/Ray.h>
 
 #include <glm/glm.hpp>
@@ -14,6 +15,10 @@
 
 #include "texture/Solid.h"
 #include "texture/Checker.h"
+#include "texture/Noisy.h"
+#include "texture/Image.h"
+
+#include "light/Diffuse.h"
 
 #include "Config.h"
 #include "Renderer.h"
@@ -31,6 +36,8 @@ void saveImage(const Renderer::Framebuffer& framebuffer, const Config& config) {
 }
 
 int main() {
+    kc::core::initLogging("raytracer");
+
     Config config{.width = 1600, .height = 900};
 
     geom::IntersectableCollection world;
@@ -44,10 +51,16 @@ int main() {
     Solid t3{glm::vec3{1.0f}};
     Solid t4{glm::vec3{0.0f}};
 
+    Noisy n1{16.0f};
+
     Checker c1{&t3, &t4};
 
+    light::Diffuse light{&t3};
+
+    Image earth{"earthmap.jpg"};
+
     Lambertian l1(&c1);
-    Lambertian l2(&t2);
+    Lambertian l2(&earth);
 
     Metal m1(glm::vec3(0.8, 0.8, 0.8), 0.3f);
     Metal m2(glm::vec3(0.8, 0.6, 0.2), 0.9f);
@@ -63,8 +76,8 @@ int main() {
         0.5f, &l2
     };
     geom::Sphere s3{
-        glm::vec3{-1.0, 0.0, -1.0},
-        0.5f, &m1
+        glm::vec3{0.0, 1.0, -0.5},
+        0.1f, &light
     };
     geom::Sphere s4{
         glm::vec3{1.0, 0.0, -1.0},
@@ -86,7 +99,8 @@ int main() {
     auto boundingVolume = world.getBoundingVolume();
 
     Renderer renderer{config, camera, &boundingVolume};
-    renderer.render();
+    constexpr int depth = 15;
+    renderer.render(depth);
 
     saveImage(renderer.getFramebuffer(), config);
     return 0;

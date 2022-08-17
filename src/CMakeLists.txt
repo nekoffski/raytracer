@@ -1,4 +1,4 @@
-set(LIBS pthread kc)
+set(LIBS pthread kc stb)
 
 file(GLOB_RECURSE SRC *.cpp)
 list(REMOVE_ITEM SRC ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)

@@ -44,7 +44,7 @@ std::pair<float, float> Renderer::getUV(int i, int j) const {
 }
 
 void Renderer::render(int depth) {
-    static constexpr int samplesPerPixel = 10;
+    static constexpr int samplesPerPixel = 25;
 
     for (int j = m_config.height - 1; j >= 0; --j) {
         std::cout << getProgress(j) << "% done\n";
@@ -74,11 +74,14 @@ glm::vec3 Renderer::traceRay(const kc::math::Ray& ray, int depth) {
     static constexpr float max = std::numeric_limits<float>::max();
 
     if (auto result = m_world->intersect(ray, nearest, max); result) {
-        if (auto s = result->material->scatter(ray, *result); s)
-            return s->attenuation * traceRay(s->ray, depth - 1);
+        const auto emitted =
+            result->material->emit(result->u, result->v, result->hitPoint);
 
-        return glm::vec3{0.0f};
+        if (auto s = result->material->scatter(ray, *result); s)
+            return emitted + s->attenuation * traceRay(s->ray, depth - 1);
+
+        return emitted;
     }
 
-    return background(ray);
+    return glm::vec3{0.1f};
 }
