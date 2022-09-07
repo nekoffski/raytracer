@@ -19,7 +19,7 @@ class Renderer {
 
     const Framebuffer& getFramebuffer() const;
 
-    void render(int depth = 15);
+    void render(int depth, int samplesPerPixel);
     glm::vec3 traceRay(const kc::math::Ray& ray, int depth);
 
    private:

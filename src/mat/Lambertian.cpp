@@ -4,13 +4,17 @@
 
 namespace mat {
 
+Lambertian::Lambertian(const glm::vec3& color)
+    : m_solidAlbedo(texture::Solid{color}), m_albedo(std::addressof(*m_solidAlbedo)) {}
+
 Lambertian::Lambertian(texture::Texture* albedo) : m_albedo(albedo) {}
 
 std::optional<ScatterRecord> Lambertian::scatter(
     const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord
 ) {
     // TODO: scatter with some probability p
-    auto rayDirection = hitRecord.normal + kc::math::randomNormalVec3();
+    auto rayDirection =
+        hitRecord.normal + kc::math::randomUnitHemisphereVec3(hitRecord.normal);
 
     static constexpr float delta = 0.0001f;
 

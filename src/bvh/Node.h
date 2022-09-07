@@ -10,7 +10,8 @@ namespace bvh {
 class Node : public geom::Intersectable {
    public:
     explicit Node(
-        const std::vector<geom::Intersectable*>& objects, uint64_t start, uint64_t end
+        const std::vector<geom::Intersectable*>& objects, uint64_t start = 0,
+        uint64_t end = 1
     );
 
     std::optional<geom::IntersectRecord> intersect(

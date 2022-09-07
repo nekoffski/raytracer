@@ -1,5 +1,6 @@
 #pragma once
 
+#include <kc/math/Ray.h>
 #include <glm/glm.hpp>
 
 #include "mat/Material.h"
@@ -16,5 +17,9 @@ struct IntersectRecord {
 
     mat::Material* material;
 };
+
+inline glm::vec3 calculateNormal(const kc::math::Ray& r, const glm::vec3& normal) {
+    return glm::dot(r.getDirection(), normal) < 0 ? normal : -normal;
+}
 
 }  // namespace geom

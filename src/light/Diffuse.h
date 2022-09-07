@@ -1,26 +1,26 @@
 #pragma once
 
+#include <optional>
+
 #include "texture/Texture.h"
+#include "texture/Solid.h"
 #include "mat/Material.h"
 
 namespace light {
 
 class Diffuse : public mat::Material {
    public:
-    explicit Diffuse(texture::Texture* texture) : m_texture(texture) {}
+    explicit Diffuse(const glm::vec3& color);
+    explicit Diffuse(texture::Texture* texture);
 
     std::optional<mat::ScatterRecord> scatter(
-        [[maybe_unused]] const kc::math::Ray& ray,
-        [[maybe_unused]] const geom::IntersectRecord& hitRecord
-    ) override {
-        return {};
-    }
+        const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord
+    ) override;
 
-    glm::vec3 emit(float u, float v, const glm::vec3& p) const override {
-        return m_texture->getColor(u, v, p);
-    }
+    glm::vec3 emit(float u, float v, const glm::vec3& p) const override;
 
    private:
+    std::optional<texture::Solid> m_solidTexture;
     texture::Texture* m_texture;
 };
 

@@ -47,7 +47,7 @@ std::optional<IntersectRecord> Sphere::intersect(
 
     return IntersectRecord{
         .hitPoint = hitPoint,
-        .normal   = normal,
+        .normal   = calculateNormal(ray, normal),
         .t        = t0,
         .u        = u,
         .v        = v,

@@ -43,9 +43,7 @@ std::pair<float, float> Renderer::getUV(int i, int j) const {
     return {u, v};
 }
 
-void Renderer::render(int depth) {
-    static constexpr int samplesPerPixel = 25;
-
+void Renderer::render(int depth, int samplesPerPixel) {
     for (int j = m_config.height - 1; j >= 0; --j) {
         std::cout << getProgress(j) << "% done\n";
 
@@ -53,8 +51,7 @@ void Renderer::render(int depth) {
             glm::vec3 color{0.0f};
 
             for (int k = 0; k < samplesPerPixel; ++k) {
-                auto [u, v] = getUV(i, j);
-
+                const auto [u, v] = getUV(i, j);
                 color += traceRay(m_camera.getRay(u, v), depth);
             }
 
@@ -83,5 +80,5 @@ glm::vec3 Renderer::traceRay(const kc::math::Ray& ray, int depth) {
         return emitted;
     }
 
-    return glm::vec3{0.1f};
+    return black;
 }
