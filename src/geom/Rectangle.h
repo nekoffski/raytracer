@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "Intersectable.h"
 #include "mat/Material.h"
 
@@ -118,5 +120,47 @@ class RectangleYZ : public Intersectable {
     mat::Material* mp;
     float y0, y1, z0, z1, k;
 };
+
+namespace Rectangle {
+
+enum class Orientation { xy, xz, yz };
+
+inline Orientation orientationFromString(const std::string& input) {
+    if (input == "XY")
+        return Orientation::xy;
+    else if (input == "XZ")
+        return Orientation::xz;
+    else if (input == "YZ")
+        return Orientation::yz;
+
+    throw std::runtime_error("Unknown orientation string");
+}
+
+inline std::unique_ptr<Intersectable> create(
+    Orientation orientation, float _y0, float _y1, float _z0, float _z1, float _k,
+    mat::Material* mat
+) {
+    switch (orientation) {
+        case Orientation::xy:
+            return std::make_unique<RectangleXY>(_y0, _y1, _z0, _z1, _k, mat);
+
+        case Orientation::xz:
+            return std::make_unique<RectangleXZ>(_y0, _y1, _z0, _z1, _k, mat);
+
+        case Orientation::yz:
+            return std::make_unique<RectangleYZ>(_y0, _y1, _z0, _z1, _k, mat);
+
+        default:
+            return nullptr;
+    }
+}
+
+inline std::unique_ptr<Intersectable> create(
+    Orientation orientation, glm::vec4 edges, float _k, mat::Material* mat
+) {
+    return create(orientation, edges[0], edges[1], edges[2], edges[3], _k, mat);
+}
+
+};  // namespace Rectangle
 
 }  // namespace geom

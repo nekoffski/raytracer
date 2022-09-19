@@ -30,6 +30,10 @@
 
 #include "geom/ConstantMedium.h"
 
+#include "scene/SceneLoader.h"
+
+kc::core::FileSystem fs{};
+
 void saveImage(
     const Renderer::Framebuffer& framebuffer, const Config& config,
     const std::string& imagePath
@@ -44,9 +48,7 @@ void saveImage(
         str << (int)(255.0f * clamp(pixel.x)) << " " << (int)(255.0f * clamp(pixel.y))
             << " " << (int)(255.0f * clamp(pixel.z)) << '\n';
 
-    kc::core::FileSystem{}.writeFile(
-        imagePath, str.str(), kc::core::FileSystem::WritePolicy::override
-    );
+    fs.writeFile(imagePath, str.str(), kc::core::FileSystem::WritePolicy::override);
 }
 
 struct Params {
@@ -76,40 +78,41 @@ int main(int argc, char** argv) {
 
     Config config{.width = 800, .height = 800};
 
-    geom::IntersectableCollection world;
+    // geom::IntersectableCollection world;
 
-    using namespace mat;
-    using namespace texture;
+    // using namespace mat;
+    // using namespace texture;
 
-    Solid r{
-        glm::vec3{.65f, .05f, .05f}
-    };
+    // Solid r{
+    //     glm::vec3{.65f, .05f, .05f}
+    // };
 
-    Solid w{glm::vec3{.73f}};
+    // Solid w{glm::vec3{.73f}};
 
-    Solid g{
-        glm::vec3{.12f, .45f, .15f}
-    };
+    // Solid g{
+    //     glm::vec3{.12f, .45f, .15f}
+    // };
 
-    Solid ll{glm::vec3{15.0f}};
+    // Solid ll{glm::vec3{15.0f}};
 
     // light::Diffuse light{glm::vec3{15.0f}};
-    Lambertian red{
-        glm::vec3{.65f, .05f, .05f}
-    };
-    Lambertian white{glm::vec3{.73f}};
-    Lambertian green{
-        glm::vec3{.12f, .45f, .15f}
-    };
+
+    // Lambertian red{
+    //     glm::vec3{.65f, .05f, .05f}
+    // };
+    // Lambertian white{glm::vec3{.73f}};
+    // Lambertian green{
+    //     glm::vec3{.12f, .45f, .15f}
+    // };
 
     // Solid b{glm::vec3{0.0f}};
 
-    // geom::RectangleYZ r1(0, 555, 0, 555, 555, &green);
-    // geom::RectangleYZ r2(0, 555, 0, 555, 0, &red);
-    // geom::RectangleXZ r3(213, 343, 227, 332, 554, &light);
-    // geom::RectangleXZ r4(0, 555, 0, 555, 0, &white);
-    // geom::RectangleXZ r5(0, 555, 0, 555, 555, &white);
-    // geom::RectangleXY r6(0, 555, 0, 555, 555, &white);
+    // // geom::RectangleYZ r1(0, 555, 0, 555, 555, &green);
+    // // geom::RectangleYZ r2(0, 555, 0, 555, 0, &red);
+    // // geom::RectangleXZ r3(213, 343, 227, 332, 554, &light);
+    // // geom::RectangleXZ r4(0, 555, 0, 555, 0, &white);
+    // // geom::RectangleXZ r5(0, 555, 0, 555, 555, &white);
+    // // geom::RectangleXY r6(0, 555, 0, 555, 555, &white);
 
     // geom::Box box1{glm::vec3(0, 0, 0), glm::vec3(165, 330, 165), &white};
 
@@ -128,122 +131,123 @@ int main(int argc, char** argv) {
     //     &bbb2
     // };
 
-    // geom::ConstantMedium smoke1{&bbbb1, 0.01f, &b};
-    // geom::ConstantMedium smoke2{&bbbb2, 0.01f, &w};
+    // // geom::ConstantMedium smoke1{&bbbb1, 0.01f, &b};
+    // // geom::ConstantMedium smoke2{&bbbb2, 0.01f, &w};
 
-    // world.addObjects(&r1, &r2, &r3, &r4, &r5, &r6, &smoke1, &smoke2);
+    // world.addObjects(&bbbb1);
 
-    // Camera camera{
-    //     glm::vec3{278, 278, -800},
-    //     glm::vec3{278, 278, 0   },
-    //     glm::vec3{0,   1,   0   },
-    //     40.0f,
-    //     1.0f,
-    //     1.0f,
-    //     1.0f
-    // };
-
-    geom::IntersectableCollection boxes1;
-
-    // ground
-    texture::Solid groundTexture{
-        glm::vec3{0.48, 0.83, 0.53}
-    };
-    mat::Lambertian ground{&groundTexture};
-
-    std::vector<geom::Box> boxes1Objects;
-
-    const int boxes_per_side = 20;
-    for (int i = 0; i < boxes_per_side; i++) {
-        for (int j = 0; j < boxes_per_side; j++) {
-            auto w  = 100.0;
-            auto x0 = -1000.0 + i * w;
-            auto z0 = -1000.0 + j * w;
-            auto y0 = 0.0;
-            auto x1 = x0 + w;
-            auto y1 = kc::math::random<float>(1.0f, 101.0f);
-            auto z1 = z0 + w;
-
-            boxes1Objects.push_back(
-                geom::Box(glm::vec3(x0, y0, z0), glm::vec3(x1, y1, z1), &ground)
-            );
-        }
-    }
-
-    for (auto& box : boxes1Objects) boxes1.add(&box);
-    bvh::Node boxes1Bvh{boxes1.getObjects()};
-
-    // light
-    texture::Solid lightTexture{
-        glm::vec3{7, 7, 7}
-    };
-    light::Diffuse lightMat{&lightTexture};
-    geom::RectangleXZ light{123, 423, 147, 412, 554, &lightMat};
-
-    world.add(&light);
-
-    // spheres
-    mat::Dielectric sphere1Mat{1.5f};
-    mat::Metal sphere2Mat{
-        glm::vec3{0.8, 0.8, 0.9},
+    Camera camera{
+        glm::vec3{278, 278, -800},
+        glm::vec3{278, 278, 0   },
+        glm::vec3{0,   1,   0   },
+        40.0f,
+        1.0f,
+        1.0f,
         1.0f
     };
 
-    geom::Sphere s1{
-        glm::vec3{260, 150, 45},
-        50, &sphere1Mat
-    };
-    geom::Sphere s2{
-        glm::vec3{0, 150, 145},
-        50, &sphere2Mat
-    };
+    // geom::IntersectableCollection boxes1;
 
-    geom::Sphere boundary{
-        glm::vec3{360, 150, 145},
-        70, &sphere1Mat
-    };
+    // // ground
+    // texture::Solid groundTexture{
+    //     glm::vec3{0.48, 0.83, 0.53}
+    // };
+    // mat::Lambertian ground{&groundTexture};
 
-    texture::Solid albedo1{
-        glm::vec3{0.4, 0.6, 0.9}
-    };
-    texture::Solid albedo2{glm::vec3{1.0f}};
+    // std::vector<geom::Box> boxes1Objects;
 
-    geom::ConstantMedium c1{&boundary, 0.6, &albedo1};
-    geom::ConstantMedium c2{&boundary, 0.0001, &albedo2};
+    // const int boxes_per_side = 20;
+    // for (int i = 0; i < boxes_per_side; i++) {
+    //     for (int j = 0; j < boxes_per_side; j++) {
+    //         auto w  = 100.0;
+    //         auto x0 = -1000.0 + i * w;
+    //         auto z0 = -1000.0 + j * w;
+    //         auto y0 = 0.0;
+    //         auto x1 = x0 + w;
+    //         auto y1 = kc::math::random<float>(1.0f, 101.0f);
+    //         auto z1 = z0 + w;
 
-    world.addObjects(&s1, &s2, &boundary, &c1, &c2);
+    //         boxes1Objects.push_back(
+    //             geom::Box(glm::vec3(x0, y0, z0), glm::vec3(x1, y1, z1), &ground)
+    //         );
+    //     }
+    // }
 
-    // earth
-    texture::Image eartText{"earthmap.jpg"};
-    mat::Lambertian earthMat{&eartText};
+    // for (auto& box : boxes1Objects) boxes1.add(&box);
+    // bvh::Node boxes1Bvh{boxes1.getObjects()};
 
-    geom::Sphere s3{
-        glm::vec3{400, 200, 400},
-        100, &earthMat
-    };
+    // // light
+    // texture::Solid lightTexture{
+    //     glm::vec3{7, 7, 7}
+    // };
+    // light::Diffuse lightMat{&lightTexture};
+    // geom::RectangleXZ light{123, 423, 147, 412, 554, &lightMat};
 
-    world.add(&s3);
+    // world.add(&light);
 
-    geom::IntersectableCollection box2;
-    std::vector<geom::Sphere> box2Objects;
+    // // spheres
+    // mat::Dielectric sphere1Mat{1.5f};
+    // mat::Metal sphere2Mat{
+    //     glm::vec3{0.8, 0.8, 0.9},
+    //     1.0f
+    // };
 
-    for (int j = 0; j < 250; j++) {
-        box2Objects.emplace_back(kc::math::randomVec3(0, 165), 10, &white);
-    }
+    // geom::Sphere s1{
+    //     glm::vec3{260, 150, 45},
+    //     50, &sphere1Mat
+    // };
+    // geom::Sphere s2{
+    //     glm::vec3{0, 150, 145},
+    //     50, &sphere2Mat
+    // };
 
-    for (auto& s : box2Objects) box2.add(&s);
+    // geom::Sphere boundary{
+    //     glm::vec3{360, 150, 145},
+    //     70, &sphere1Mat
+    // };
 
-    world.add(&box2);
+    // texture::Solid albedo1{
+    //     glm::vec3{0.4, 0.6, 0.9}
+    // };
+    // texture::Solid albedo2{glm::vec3{1.0f}};
 
-    // render
-    auto boundingVolume = world.getBoundingVolume();
+    // geom::ConstantMedium c1{&boundary, 0.6, &albedo1};
+    // geom::ConstantMedium c2{&boundary, 0.0001, &albedo2};
 
-    Camera camera(
-        glm::vec3(478, 278, -600), glm::vec3(278, 278, 0), glm::vec3(0.0f, 1.0f, 0.0f),
-        40.0f, 1.0f, 1.0f, 1.0f
-    );
+    // world.addObjects(&s1, &s2, &boundary, &c1, &c2);
 
-    Renderer renderer{config, camera, &world};
+    // // earth
+    // texture::Image eartText{"earthmap.jpg"};
+    // mat::Lambertian earthMat{&eartText};
+
+    // geom::Sphere s3{
+    //     glm::vec3{400, 200, 400},
+    //     100, &earthMat
+    // };
+
+    // world.add(&s3);
+
+    // geom::IntersectableCollection box2;
+    // std::vector<geom::Sphere> box2Objects;
+
+    // for (int j = 0; j < 250; j++) {
+    //     box2Objects.emplace_back(kc::math::randomVec3(0, 165), 10, &white);
+    // }
+
+    // for (auto& s : box2Objects) box2.add(&s);
+
+    // world.add(&box2);
+
+    // // render
+    // auto boundingVolume = world.getBoundingVolume();
+
+    // Camera camera(
+    //     glm::vec3(478, 278, -600), glm::vec3(278, 278, 0), glm::vec3(0.0f, 1.0f, 0.0f),
+    //     40.0f, 1.0f, 1.0f, 1.0f
+    // );
+
+    auto scene = scene::SceneLoader{}.fromFile("../scenes/test.json", fs).load();
+    Renderer renderer{config, camera, &scene.world};
 
     const auto& [depth, samplesPerPixel, imagePath] = getRenderParams(argc, argv);
     LOG_INFO(
