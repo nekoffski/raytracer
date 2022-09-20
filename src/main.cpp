@@ -136,16 +136,6 @@ int main(int argc, char** argv) {
 
     // world.addObjects(&bbbb1);
 
-    Camera camera{
-        glm::vec3{278, 278, -800},
-        glm::vec3{278, 278, 0   },
-        glm::vec3{0,   1,   0   },
-        40.0f,
-        1.0f,
-        1.0f,
-        1.0f
-    };
-
     // geom::IntersectableCollection boxes1;
 
     // // ground
@@ -247,7 +237,7 @@ int main(int argc, char** argv) {
     // );
 
     auto scene = scene::SceneLoader{}.fromFile("../scenes/test.json", fs).load();
-    Renderer renderer{config, camera, &scene.world};
+    Renderer renderer{config, *scene.camera, &scene.world};
 
     const auto& [depth, samplesPerPixel, imagePath] = getRenderParams(argc, argv);
     LOG_INFO(

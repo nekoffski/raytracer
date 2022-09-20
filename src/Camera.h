@@ -7,8 +7,7 @@ class Camera {
    public:
     Camera(
         const glm::vec3& lookFrom, const glm::vec3& lookAt, const glm::vec3& up,
-        float vfov,  // vertical field-of-view in degrees
-        float aspect_ratio, float aperture, float focusDist
+        float verticalFov, float aspect, float aperture, float focusDistance
     );
 
     kc::math::Ray getRay(float s, float t) const;
