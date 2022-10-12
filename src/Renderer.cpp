@@ -1,6 +1,8 @@
 #include "Renderer.h"
 
 #include <iostream>
+
+#include <kc/core/Log.h>
 #include <kc/math/Utils.hpp>
 
 glm::vec3 background(const kc::math::Ray& ray) {
@@ -34,6 +36,40 @@ int Renderer::getProgress(int index) {
     );
 }
 
+struct TimePoint {
+    int64_t hour;
+    int64_t minute;
+    int64_t seconds;
+};
+
+template <typename T> static TimePoint parseTimePoint(const T& timePoint) {
+    auto msElapsed =
+        std::chrono::duration_cast<std::chrono::milliseconds>(timePoint).count();
+
+    static constexpr int64_t msInSecond = 1000;
+    static constexpr int64_t msInMinute = msInSecond * 60;
+    static constexpr int64_t msInHour   = msInMinute * 60;
+
+    const auto hours = msElapsed / msInHour;
+    msElapsed %= msInHour;
+
+    const auto minutes = msElapsed / msInMinute;
+    msElapsed %= msInMinute;
+
+    const auto seconds = msElapsed / msInSecond;
+
+    return TimePoint{hours, minutes, seconds};
+}
+
+std::string Renderer::formatProgress(int index) {
+    const auto [hours, minutes, seconds] = parseTimePoint(m_clock.now() - m_startTime);
+
+    return fmt::format(
+        "Elapsed time {:0>2}:{:0>2}:{:0>2} - done {:0>2}%", hours, minutes, seconds,
+        getProgress(index)
+    );
+}
+
 std::pair<float, float> Renderer::getUV(int i, int j) const {
     auto u = static_cast<float>(i + kc::math::random<float>(-0.5f, 0.5f)) /
              (m_config.width - 1);
@@ -44,8 +80,10 @@ std::pair<float, float> Renderer::getUV(int i, int j) const {
 }
 
 void Renderer::render(int depth, int samplesPerPixel) {
+    m_startTime = m_clock.now();
+
     for (int j = m_config.height - 1; j >= 0; --j) {
-        std::cout << getProgress(j) << "% done\n";
+        std::cout << "\t\r" << formatProgress(j) << std::flush;
 
         for (int i = 0u; i < m_config.width; ++i) {
             glm::vec3 color{0.0f};

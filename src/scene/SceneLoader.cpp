@@ -9,7 +9,11 @@
 
 #include "light/Diffuse.h"
 
+#include "geom/Sphere.h"
 #include "geom/Rectangle.h"
+#include "geom/Box.h"
+
+#include "transform/Translate.h"
 
 namespace scene {
 
@@ -35,13 +39,53 @@ void SceneLoader::processFields(const Node& root) {
 
         processEntities(root, "textures", config().textures, getTexturesFactories());
         processEntities(root, "materials", config().materials, getMaterialsFactories());
-        processEntities(root, "objects", config().objects, getObjectsFactories());
 
-        for (auto& [_, object] : config().objects) config().world.add(object.get());
+        processObjects(root);
 
     } catch (const kc::core::ErrorBase& e) {
         LOG_ERROR("Could not process scene - {}", e.what());
         throw SceneError{};
+    }
+}
+
+void SceneLoader::processObjects(const Node& root) {
+    auto& container      = config().objects;
+    const auto factories = getObjectsFactories();
+
+    const auto transformFactories = getTransformFactories();
+
+    static const std::string jsonField = "objects";
+    for (auto& entity : fieldFrom(root).withName(jsonField).asArray().get()) {
+        const auto& [name, type] = getNameAndType(entity);
+        validate(jsonField, type, name, container, factories);
+
+        geom::Intersectable* objectToRender =
+            container.insert({name, factories.at(type)(this, entity)})
+                .first->second.get();  // TODO: ugly as hell, wrap into some helper
+
+        if (entity.isMember("transforms")) {
+            for (auto& transformDescription :
+                 fieldFrom(entity).withName("transforms").asArray().get()) {
+                const auto& [name, type] = getNameAndType(transformDescription);
+
+                ASSERT(
+                    transformFactories.contains(type), "Could not find {} transform", type
+                );
+
+                LOG_INFO("Processing transform: {}/{}", type, name);
+
+                // TODO: ugly as hell, wrap into some helper
+                objectToRender =
+                    container
+                        .insert(
+                            {name, transformFactories.at(type
+                                   )(this, transformDescription, objectToRender)}
+                        )
+                        .first->second.get();
+            }
+        }
+
+        config().world.add(objectToRender);
     }
 }
 
@@ -61,6 +105,19 @@ StrKeyMap<SceneLoader::TextureFactory> SceneLoader::getTexturesFactories() const
     return StrKeyMap<TextureFactory>{
         {"Solid", createSolidTexture},
         {"Image", createImageTexture},
+    };
+}
+
+StrKeyMap<SceneLoader::TransformFactory> SceneLoader::getTransformFactories() const {
+    static auto createTranslate =
+        [](SceneLoader* loader, const Node& node, geom::Intersectable* object) {
+        return std::make_unique<transform::Translate>(
+            loader->fieldFrom(node).withName("offset").ofType<glm::vec3>().get(), object
+        );
+    };
+
+    return StrKeyMap<TransformFactory>{
+        {"Translate", createTranslate}
     };
 }
 
@@ -89,8 +146,47 @@ StrKeyMap<SceneLoader::ObjectFactory> SceneLoader::getObjectsFactories() const {
         );
     };
 
+    static auto createSphere = [](SceneLoader* loader, const Node& node) {
+        auto position =
+            loader->fieldFrom(node).withName("position").ofType<glm::vec3>().get();
+        auto radius = loader->fieldFrom(node).withName("radius").ofType<float>().get();
+
+        auto& materials = loader->config().materials;
+
+        auto material =
+            loader->fieldFrom(node).withName("material").ofType<std::string>().get();
+
+        ASSERT(
+            materials.contains(material), "Could not find material with name: {}",
+            material
+        );
+
+        return std::make_unique<geom::Sphere>(
+            position, radius, materials.at(material).get()
+        );
+    };
+
+    static auto createBox = [](SceneLoader* loader, const Node& node) {
+        auto min = loader->fieldFrom(node).withName("min").ofType<glm::vec3>().get();
+        auto max = loader->fieldFrom(node).withName("max").ofType<glm::vec3>().get();
+
+        auto& materials = loader->config().materials;
+
+        auto material =
+            loader->fieldFrom(node).withName("material").ofType<std::string>().get();
+
+        ASSERT(
+            materials.contains(material), "Could not find material with name: {}",
+            material
+        );
+
+        return std::make_unique<geom::Box>(min, max, materials.at(material).get());
+    };
+
     return StrKeyMap<ObjectFactory>{
         {"Rectangle", createRectangle},
+        {"Sphere",    createSphere   },
+        {"Box",       createBox      }
     };
 }
 

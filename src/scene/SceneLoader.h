@@ -42,6 +42,9 @@ class SceneLoader : public JsonConfigLoader<Scene>, NodeHelper<SceneError> {
     using ObjectFactory = std::function<
         std::unique_ptr<geom::Intersectable>(SceneLoader* loader, const Node&)>;
 
+    using TransformFactory = std::function<std::unique_ptr<
+        geom::Intersectable>(SceneLoader* loader, const Node&, geom::Intersectable*)>;
+
     using MaterialFactory =
         std::function<std::unique_ptr<mat::Material>(SceneLoader* loader, const Node&)>;
 
@@ -49,26 +52,37 @@ class SceneLoader : public JsonConfigLoader<Scene>, NodeHelper<SceneError> {
 
     void processCamera(const Node& root);
 
-    void processEntities(
-        const Node& root, const std::string& tag, auto& container, const auto&& factories
-    ) {
-        const auto entityType = tag.substr(0, tag.size() - 1);
+    static std::string getEntityType(const std::string& tag) {
+        return tag.substr(0, tag.size() - 1);
+    }
 
+    void validate(
+        const std::string& tag, const std::string& type, const std::string& name,
+        auto& container, const auto& factories
+    ) {
+        LOG_INFO("Processing {}: name {}, type {}", getEntityType(tag), name, type);
+
+        ASSERT(not container.contains(name), fmt::format("{} already exists", name));
+        ASSERT(factories.contains(type), "{} object type not supported", type);
+    }
+
+    void processEntities(
+        const Node& root, const std::string& tag, auto& container, const auto& factories
+    ) {
         for (auto& entity : fieldFrom(root).withName(tag).asArray().get()) {
             const auto& [name, type] = getNameAndType(entity);
-
-            LOG_INFO("Processing {}: name {}, type {}", entityType, name, type);
-
-            ASSERT(not container.contains(name), fmt::format("{} already exists", name));
-            ASSERT(factories.contains(type), "{} object type not supported", type);
-
+            validate(tag, type, name, container, factories);
             container[name] = factories.at(type)(this, entity);
         }
     }
 
+    void processObjects(const Node& root);
+
     StrKeyMap<TextureFactory> getTexturesFactories() const;
 
     StrKeyMap<ObjectFactory> getObjectsFactories() const;
+
+    StrKeyMap<TransformFactory> getTransformFactories() const;
 
     StrKeyMap<MaterialFactory> getMaterialsFactories() const;
 

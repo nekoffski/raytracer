@@ -1,4 +1,6 @@
-set(LIBS pthread kc stb)
+find_package(Boost 1.69 COMPONENTS program_options REQUIRED)
+
+set(LIBS pthread kc stb ${Boost_LIBRARIES})
 
 file(GLOB_RECURSE SRC *.cpp)
 list(REMOVE_ITEM SRC ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
