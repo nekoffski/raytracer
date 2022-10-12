@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <numeric>
 
 #include <glm/glm.hpp>
 
@@ -14,6 +15,9 @@ class MeanFilter : public Filter {
     using Batch = std::vector<glm::vec3>;
 
    public:
+    explicit MeanFilter(int batchSize = defaultBatchSize)
+        : m_batchSize(batchSize), m_invertedBatchSize(1.0f / m_batchSize) {}
+
     Renderer::Framebuffer apply(const Renderer::Framebuffer& input) override {
         auto output = input;
 
@@ -29,11 +33,12 @@ class MeanFilter : public Filter {
     glm::vec3 getAverage(const Batch& batch) {
         auto sum = std::accumulate(batch.begin(), batch.end(), glm::vec3{0.0f});
 
-        return (1.0f / batch.size()) * sum;
+        return m_invertedBatchSize * sum;
     }
 
     Batch getBatch(int i, int j, const Renderer::Framebuffer& input) {
         Batch batch;
+        batch.reserve(m_batchSize);
 
         for (int x = -1; x <= 1; ++x) {
             for (int y = -1; y <= 1; ++y) {
@@ -55,8 +60,12 @@ class MeanFilter : public Filter {
         return batch;
     }
 
-    static constexpr int width  = 800;
-    static constexpr int height = 800;
+    static constexpr int defaultBatchSize = 3;
+    static constexpr int width            = 800;  // TODO: make it configurable
+    static constexpr int height           = 800;
+
+    int m_batchSize;
+    float m_invertedBatchSize;
 };
 
 }  // namespace image
