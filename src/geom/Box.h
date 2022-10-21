@@ -19,9 +19,13 @@ class Box : public Intersectable {
 
     bvh::AABB getBoundingBox() const override;
 
+    mat::Material* getMaterial() const override { return m_material; }
+
    private:
     glm::vec3 m_min;
     glm::vec3 m_max;
+
+    mat::Material* m_material;
 
     IntersectableCollection m_walls;
     std::vector<std::unique_ptr<Intersectable>> m_wallsInstances;

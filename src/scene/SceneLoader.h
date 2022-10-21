@@ -45,12 +45,21 @@ class SceneLoader : public JsonConfigLoader<Scene>, NodeHelper<SceneError> {
     using TransformFactory = std::function<std::unique_ptr<
         geom::Intersectable>(SceneLoader* loader, const Node&, geom::Intersectable*)>;
 
+    using VfxFactory = TransformFactory;
+
     using MaterialFactory =
         std::function<std::unique_ptr<mat::Material>(SceneLoader* loader, const Node&)>;
 
     void processFields(const Node& root) override;
 
     void processCamera(const Node& root);
+
+    static auto insert(auto& container, const std::string& key, auto&& value) {
+        auto iterator = container.insert({key, std::move(value)}).first;
+        auto& object  = iterator->second;
+
+        return object.get();
+    }
 
     static std::string getEntityType(const std::string& tag) {
         return tag.substr(0, tag.size() - 1);
@@ -76,6 +85,27 @@ class SceneLoader : public JsonConfigLoader<Scene>, NodeHelper<SceneError> {
         }
     }
 
+    geom::Intersectable* processWrappers(
+        const Node& root, const std::string& tag, auto& container, const auto& factories,
+        geom::Intersectable* object
+    ) {
+        if (root.isMember(tag)) {
+            const auto descriptions = fieldFrom(root).withName(tag).asArray().get();
+
+            for (const auto& description : descriptions) {
+                const auto& [name, type] = getNameAndType(description);
+
+                ASSERT(factories.contains(type), "Could not find {}", type);
+                LOG_INFO("Processing: {}/{}", type, name);
+
+                const auto& factory = factories.at(type);
+
+                object = insert(container, name, factory(this, description, object));
+            }
+        }
+        return object;
+    }
+
     void processObjects(const Node& root);
 
     StrKeyMap<TextureFactory> getTexturesFactories() const;
@@ -83,6 +113,8 @@ class SceneLoader : public JsonConfigLoader<Scene>, NodeHelper<SceneError> {
     StrKeyMap<ObjectFactory> getObjectsFactories() const;
 
     StrKeyMap<TransformFactory> getTransformFactories() const;
+
+    StrKeyMap<VfxFactory> getVfxFactories() const;
 
     StrKeyMap<MaterialFactory> getMaterialsFactories() const;
 

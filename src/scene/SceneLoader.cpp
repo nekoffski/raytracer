@@ -12,8 +12,10 @@
 #include "geom/Sphere.h"
 #include "geom/Rectangle.h"
 #include "geom/Box.h"
+#include "geom/ConstantMedium.h"
 
 #include "transform/Translate.h"
+#include "transform/Rotate.h"
 
 namespace scene {
 
@@ -53,37 +55,23 @@ void SceneLoader::processObjects(const Node& root) {
     const auto factories = getObjectsFactories();
 
     const auto transformFactories = getTransformFactories();
+    const auto vfxFactories       = getVfxFactories();
 
     static const std::string jsonField = "objects";
     for (auto& entity : fieldFrom(root).withName(jsonField).asArray().get()) {
         const auto& [name, type] = getNameAndType(entity);
         validate(jsonField, type, name, container, factories);
 
+        const auto& entityFactory = factories.at(type);
+
         geom::Intersectable* objectToRender =
-            container.insert({name, factories.at(type)(this, entity)})
-                .first->second.get();  // TODO: ugly as hell, wrap into some helper
+            insert(container, name, entityFactory(this, entity));
 
-        if (entity.isMember("transforms")) {
-            for (auto& transformDescription :
-                 fieldFrom(entity).withName("transforms").asArray().get()) {
-                const auto& [name, type] = getNameAndType(transformDescription);
-
-                ASSERT(
-                    transformFactories.contains(type), "Could not find {} transform", type
-                );
-
-                LOG_INFO("Processing transform: {}/{}", type, name);
-
-                // TODO: ugly as hell, wrap into some helper
-                objectToRender =
-                    container
-                        .insert(
-                            {name, transformFactories.at(type
-                                   )(this, transformDescription, objectToRender)}
-                        )
-                        .first->second.get();
-            }
-        }
+        objectToRender = processWrappers(
+            entity, "transforms", container, transformFactories, objectToRender
+        );
+        objectToRender =
+            processWrappers(entity, "vfx", container, vfxFactories, objectToRender);
 
         config().world.add(objectToRender);
     }
@@ -108,6 +96,19 @@ StrKeyMap<SceneLoader::TextureFactory> SceneLoader::getTexturesFactories() const
     };
 }
 
+StrKeyMap<SceneLoader::VfxFactory> SceneLoader::getVfxFactories() const {
+    static auto createConstantMedium =
+        [](SceneLoader* loader, const Node& node, geom::Intersectable* object) {
+        const auto density =
+            loader->fieldFrom(node).withName("density").ofType<float>().get();
+        return std::make_unique<geom::ConstantMedium>(object, density);
+    };
+
+    return StrKeyMap<VfxFactory>{
+        {"ConstantMedium", createConstantMedium},
+    };
+}
+
 StrKeyMap<SceneLoader::TransformFactory> SceneLoader::getTransformFactories() const {
     static auto createTranslate =
         [](SceneLoader* loader, const Node& node, geom::Intersectable* object) {
@@ -115,9 +116,19 @@ StrKeyMap<SceneLoader::TransformFactory> SceneLoader::getTransformFactories() co
             loader->fieldFrom(node).withName("offset").ofType<glm::vec3>().get(), object
         );
     };
+    // TODO: rename to Translation/Rotation
+    static auto createRotate =
+        [](SceneLoader* loader, const Node& node, geom::Intersectable* object) {
+        auto angle = loader->fieldFrom(node).withName("angle").ofType<float>().get();
+        auto axis  = loader->fieldFrom(node).withName("axis").ofType<std::string>().get();
+
+        // if (axis == "Y")
+        return std::make_unique<transform::RotateY>(angle, object);
+    };
 
     return StrKeyMap<TransformFactory>{
-        {"Translate", createTranslate}
+        {"Translate", createTranslate},
+        {"Rotate",    createRotate   }
     };
 }
 

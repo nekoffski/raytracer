@@ -85,6 +85,8 @@ class RotateY : public geom::Intersectable {
         return hitRecord;
     }
 
+    mat::Material* getMaterial() const override { return m_root->getMaterial(); }
+
     bvh::AABB getBoundingBox() const override { return m_boundingBox; }
 
    private:

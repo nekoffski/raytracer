@@ -1,19 +1,33 @@
 #pragma once
 
+#include <kc/math/Utils.hpp>
+#include <kc/core/Log.h>
+
 #include "Intersectable.h"
 
 #include "mat/Isotropic.h"
+#include "mat/Lambertian.h"
 
 namespace geom {
 
 class ConstantMedium : public Intersectable {
+    static texture::Texture* getAlbedo(const Intersectable* boundary) {
+        const auto material =
+            dynamic_cast<const mat::Lambertian*>(boundary->getMaterial());
+
+        ASSERT(
+            material != nullptr,
+            "To apply ConstantMedium vfx the object must provide Lambertian material"
+        );
+
+        return material->getAlbedo();
+    }
+
    public:
-    explicit ConstantMedium(
-        Intersectable* boundary, float density, texture::Texture* albedo
-    )
+    explicit ConstantMedium(Intersectable* boundary, float density)
         : m_boundary(boundary)
         , m_negativeInversedDensity(-1.0f / density)
-        , m_phaseFunction(albedo) {}
+        , m_phaseFunction(getAlbedo(boundary)) {}
 
     std::optional<IntersectRecord> intersect(
         const kc::math::Ray& ray, float min, float max
@@ -55,6 +69,7 @@ class ConstantMedium : public Intersectable {
    private:
     Intersectable* m_boundary;
     float m_negativeInversedDensity;
+
     mat::Isotropic m_phaseFunction;
 };
 

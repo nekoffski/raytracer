@@ -5,7 +5,7 @@
 namespace geom {
 
 Box::Box(const glm::vec3& min, const glm::vec3& max, mat::Material* material)
-    : m_min(min), m_max(max) {
+    : m_min(min), m_max(max), m_material(material) {
     static constexpr int wallsCount = 6;
     m_wallsInstances.reserve(wallsCount);
 

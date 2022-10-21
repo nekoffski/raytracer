@@ -19,6 +19,8 @@ class Lambertian : public Material {
         const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord
     ) override;
 
+    texture::Texture* getAlbedo() const { return m_albedo; }
+
    private:
     std::optional<texture::Solid> m_solidAlbedo;
     texture::Texture* m_albedo;

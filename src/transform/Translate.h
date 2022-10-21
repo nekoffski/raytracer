@@ -4,10 +4,10 @@
 
 namespace transform {
 
-class Translate : public geom::Intersectable {
+class Translate : public geom::IntersectableDecorator {
    public:
     explicit Translate(const glm::vec3& offset, geom::Intersectable* root)
-        : m_offset(offset), m_root(root) {}
+        : m_offset(offset), geom::IntersectableDecorator(root) {}
 
     std::optional<geom::IntersectRecord> intersect(
         const kc::math::Ray& ray, float min, float max
@@ -34,7 +34,6 @@ class Translate : public geom::Intersectable {
     }
 
    private:
-    geom::Intersectable* m_root;
     glm::vec3 m_offset;
 };
 

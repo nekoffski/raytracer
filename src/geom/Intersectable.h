@@ -18,6 +18,18 @@ struct Intersectable {
     ) = 0;
 
     virtual bvh::AABB getBoundingBox() const = 0;
+
+    virtual mat::Material* getMaterial() const { return nullptr; }
+};
+
+class IntersectableDecorator : public Intersectable {
+   public:
+    explicit IntersectableDecorator(Intersectable* root) : m_root(root) {}
+
+    mat::Material* getMaterial() const override { return m_root->getMaterial(); }
+
+   protected:
+    Intersectable* m_root;
 };
 
 }  // namespace geom
