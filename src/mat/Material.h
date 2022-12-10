@@ -12,12 +12,22 @@ namespace mat {
 struct ScatterRecord {
     kc::math::Ray ray;
     glm::vec3 attenuation;
+    float pdf;
 };
 
 struct Material {
     virtual std::optional<ScatterRecord> scatter(
         const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord
-    ) = 0;
+    ) {
+        return {};
+    }
+
+    virtual float scatteringPdf(
+        const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord,
+        const kc::math::Ray& scatteredRay
+    ) const {
+        return 0.0f;
+    }
 
     virtual glm::vec3 emit(
         [[maybe_unused]] float u, [[maybe_unused]] float v,

@@ -1,5 +1,7 @@
 #include "Lambertian.h"
 
+#include <numbers>
+
 #include <kc/math/Utils.hpp>
 
 namespace mat {
@@ -28,7 +30,19 @@ std::optional<ScatterRecord> Lambertian::scatter(
     return ScatterRecord{
         .ray         = scatteredRay,
         .attenuation = attenuation,
+        .pdf         = glm::dot(hitRecord.normal, scatteredRay.getDirection()) /
+               std::numbers::pi_v<float>,
     };
+}
+
+float Lambertian::scatteringPdf(
+    [[maybe_unused]] const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord,
+    const kc::math::Ray& scatteredRay
+) const {
+    const auto cosine =
+        glm::dot(hitRecord.normal, glm::normalize(scatteredRay.getDirection()));
+
+    return cosine < 0 ? 0 : cosine / std::numbers::pi_v<float>;
 }
 
 }  // namespace mat

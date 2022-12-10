@@ -113,7 +113,9 @@ glm::vec3 Renderer::traceRay(const kc::math::Ray& ray, int depth) {
             result->material->emit(result->u, result->v, result->hitPoint);
 
         if (auto s = result->material->scatter(ray, *result); s)
-            return emitted + s->attenuation * traceRay(s->ray, depth - 1);
+            return emitted + s->attenuation *
+                                 result->material->scatteringPdf(ray, *result, s->ray) *
+                                 traceRay(s->ray, depth - 1) / s->pdf;
 
         return emitted;
     }

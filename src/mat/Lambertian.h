@@ -19,6 +19,11 @@ class Lambertian : public Material {
         const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord
     ) override;
 
+    float scatteringPdf(
+        const kc::math::Ray& ray, const geom::IntersectRecord& hitRecord,
+        const kc::math::Ray& scatteredRay
+    ) const override;
+
     texture::Texture* getAlbedo() const { return m_albedo; }
 
    private:
